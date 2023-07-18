@@ -1,4 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <application
+        android:name=".BaseApp"
+        >
+        <activity
+            android:name=".ui.ChucklePickerActivity"
+            android:exported="false" />
+    </application>
+
 </manifest>
