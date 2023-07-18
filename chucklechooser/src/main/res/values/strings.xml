@@ -1,0 +1,5 @@
+<resources>
+    <string name="label_all">All</string>
+    <string name="title_files">Files</string>
+    <string name="title_gallery">Gallery</string>
+</resources>
