@@ -8,7 +8,8 @@ data class MediaItem(
     val size: Int,
     val displayName: String?,
     val id: Long,
-    val mediaUri: Uri
+    val mediaUri: Uri,
+    val isSelected: Boolean = false
 )
 
 enum class MediaType {

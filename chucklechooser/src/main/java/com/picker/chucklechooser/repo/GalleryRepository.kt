@@ -80,9 +80,9 @@ class GalleryRepository(
         val projection = arrayOf(
             MediaStore.Files.FileColumns._ID,
             MediaStore.Files.FileColumns.DISPLAY_NAME,
-            MediaStore.Files.FileColumns.SIZE,
-            MediaStore.Files.FileColumns.DATA,
-            MediaStore.Files.FileColumns.MEDIA_TYPE
+           // MediaStore.Files.FileColumns.SIZE,
+            MediaStore.Files.FileColumns.MEDIA_TYPE,
+            MediaStore.Files.FileColumns.DURATION
         )
 
         val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -157,16 +157,16 @@ class GalleryRepository(
                 val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
                 val displayNameColumn =
                     cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DISPLAY_NAME)
-                val sizeColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.SIZE)
-                val dataColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DATA)
+               // val sizeColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.SIZE)
+                val durationColumn = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DURATION)
                 val mediaTypeColumn =
                     cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.MEDIA_TYPE)
 
                 while (cursor.moveToNext()) {
                     val id = cursor.getLong(idColumn)
                     val displayName = cursor.getString(displayNameColumn)
-                    val size = cursor.getInt(sizeColumn)
-                    val data = cursor.getString(dataColumn)
+                   // val size = cursor.getInt(sizeColumn)
+                    val duration = cursor.getInt(durationColumn)
                     val type = cursor.getInt(mediaTypeColumn)
 
                     var mediaType: MediaType? = null
@@ -196,8 +196,8 @@ class GalleryRepository(
                                 mediaType = mediaType,
                                 id = id,
                                 displayName = displayName,
-                                size = size,
-                                duration = -1,
+                                size = -1,
+                                duration = duration,
                                 mediaUri = mediaUri
                             )
                         )

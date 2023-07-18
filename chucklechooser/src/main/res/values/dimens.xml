@@ -19,6 +19,7 @@
     <dimen name="padding_xlarge">24dp</dimen>
 
     <!-- Margin -->
+    <dimen name="margin_xsmall">4dp</dimen>
     <dimen name="margin_small">8dp</dimen>
     <dimen name="margin_medium">12dp</dimen>
     <dimen name="margin_large">16dp</dimen>
