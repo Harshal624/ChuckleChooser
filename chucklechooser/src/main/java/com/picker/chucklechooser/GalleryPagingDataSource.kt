@@ -5,6 +5,8 @@ import androidx.paging.PagingState
 import com.picker.chucklechooser.repo.GalleryRepository
 import com.picker.chucklechooser.repo.data.AlbumItem
 import com.picker.chucklechooser.repo.data.MediaItem
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 
 class GalleryPagingDataSource(
@@ -12,48 +14,55 @@ class GalleryPagingDataSource(
     private val repository: GalleryRepository
 ) : PagingSource<Int, MediaItem>() {
 
-    var initialLoadSize: Int = 0
+    override val keyReuseSupported: Boolean
+        get() = false
 
-    /**
-     * TODO Implement this
-     */
     override fun getRefreshKey(state: PagingState<Int, MediaItem>): Int? {
+        val anchorPosition = state.anchorPosition
+
+        if (anchorPosition != null) {
+            val closestPosition = state.closestPageToPosition(anchorPosition)?.prevKey?.plus(1)
+                ?: state.closestPageToPosition(anchorPosition)?.nextKey?.minus(1)
+            Timber.d("getRefreshKey called. Anchor pos: $anchorPosition, closest position to position: $closestPosition")
+            return closestPosition
+        }
+
         return null
     }
 
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, MediaItem> {
-        Timber.d("Load called. Key: ${params.key}")
-        try {
-            val nextPageNumber = params.key ?: 1
-            if (params.key == null) {
-                initialLoadSize = params.loadSize
+        return withContext(Dispatchers.IO) {
+            try {
+
+                val isPrepend = params is LoadParams.Prepend
+                val isAppend = params is LoadParams.Append
+                val isRefresh = params is LoadParams.Refresh
+
+                val mode = if (isPrepend) "Prepend" else if (isAppend) "Append" else "Refresh"
+
+                val currentPage = params.key ?: 0
+
+                val mediaItemList = repository.fetchAllMedia(
+                    albumItem = albumItem,
+                    page = currentPage,
+                    pageSize = params.loadSize
+                )
+
+                val prevPage = if (currentPage > 0) currentPage - 1 else null
+
+                val nextPage = if (mediaItemList.isNotEmpty()) currentPage + 1 else null
+
+                Timber.d("Mode: $mode, previous page: $prevPage, current page: $currentPage, nextPage: $nextPage. List size: ${mediaItemList.size}")
+
+                LoadResult.Page(
+                    data = mediaItemList,
+                    prevKey = prevPage,
+                    nextKey = nextPage
+                )
+            } catch (e: Exception) {
+                Timber.e("Exception: $e")
+                LoadResult.Error(e)
             }
-
-            val offset = if (nextPageNumber == 2)
-                initialLoadSize
-            else
-                ((nextPageNumber - 1) * params.loadSize) + (initialLoadSize - params.loadSize)
-
-            val mediaItemList =
-                repository.fetchAllMedia(albumItem = albumItem, offset = offset, pageSize = params.loadSize)
-
-            val count = mediaItemList.size
-
-            val nextKey = if (count < params.loadSize) null else nextPageNumber + 1
-
-            Timber.d("Total count: $count, offset: $offset, next page number: $nextPageNumber, next key: $nextKey, loadSize: ${params.loadSize}")
-
-            /**
-             * TODO Add support for placeholders and calculate itemsAfter and itemsBefore
-             */
-            return LoadResult.Page(
-                data = mediaItemList,
-                prevKey = null, // Only paging forward (for now).
-                nextKey = nextKey
-            )
-        } catch (e: Exception) {
-            Timber.e("Exception: $e")
-            return LoadResult.Error(e)
         }
     }
 }
