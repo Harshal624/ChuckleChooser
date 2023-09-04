@@ -1,10 +1,10 @@
 package com.picker.chucklechooser.ui.gallery
 
 import android.content.res.Resources
-import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.FrameLayout.LayoutParams
+import androidx.core.view.isVisible
 import androidx.paging.PagingDataAdapter
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
@@ -25,7 +25,7 @@ class GalleryPagingAdapter(
     diff()
 ) {
 
-    private val selectedImgDpInPx = CommonUtils.dpToPx(resources = resources, dp = 12F)
+    private val selectedImgDpInPx = CommonUtils.dpToPx(resources = resources, dp = 8F)
 
     companion object {
 
@@ -92,6 +92,7 @@ class GalleryPagingAdapter(
             binding.ivSelection.setImageResource(
                 if (isSelected) R.drawable.baseline_radio_button_checked_24 else R.drawable.baseline_radio_button_unchecked_24
             )
+            binding.vSelection.isVisible = isSelected
             val params: LayoutParams = binding.iv.layoutParams as LayoutParams
             if (isSelected) {
                 params.setMargins(selectedImgDpInPx,selectedImgDpInPx,selectedImgDpInPx,selectedImgDpInPx)

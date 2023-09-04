@@ -24,4 +24,13 @@
         app:srcCompat="@drawable/baseline_radio_button_unchecked_24"
         app:tint="@color/white" />
 
+    <View
+        android:id="@+id/v_selection"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/black"
+        android:alpha="0.25"
+        android:visibility="gone"
+        />
+
 </com.google.android.material.card.MaterialCardView>
