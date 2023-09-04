@@ -30,7 +30,3 @@ data class AlbumItem(val name: String, val albumType: AlbumType, val bucketId: S
         }
     }
 }
-
-enum class AlbumType {
-    ALL, OTHER
-}

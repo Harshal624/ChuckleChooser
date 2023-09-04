@@ -11,8 +11,8 @@ import android.os.Bundle
 import android.provider.MediaStore
 import com.picker.chucklechooser.repo.data.AlbumItem
 import com.picker.chucklechooser.repo.data.AlbumType
+import com.picker.chucklechooser.repo.data.DocumentType
 import com.picker.chucklechooser.repo.data.MediaItem
-import com.picker.chucklechooser.repo.data.MediaType
 import timber.log.Timber
 import java.lang.Exception
 
@@ -206,12 +206,12 @@ class GalleryRepository(
                     val duration = cursor.getInt(durationColumn)
                     val type = cursor.getInt(mediaTypeColumn)
 
-                    var mediaType: MediaType? = null
+                    var mediaType: DocumentType.MediaType? = null
                     var mediaUri: Uri? = null
 
                     when (type) {
                         MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO -> {
-                            mediaType = MediaType.VIDEO
+                            mediaType = DocumentType.MediaType.Video
                             mediaUri = ContentUris.withAppendedId(
                                 MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
                                 id
@@ -219,7 +219,7 @@ class GalleryRepository(
                         }
 
                         MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE -> {
-                            mediaType = MediaType.IMAGE
+                            mediaType = DocumentType.MediaType.Image
                             mediaUri = ContentUris.withAppendedId(
                                 MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                                 id

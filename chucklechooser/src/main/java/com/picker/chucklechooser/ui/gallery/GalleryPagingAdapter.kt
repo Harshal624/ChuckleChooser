@@ -13,12 +13,14 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.RequestOptions
 import com.picker.chucklechooser.R
 import com.picker.chucklechooser.databinding.ItemGalleryBinding
+import com.picker.chucklechooser.repo.data.Document
 import com.picker.chucklechooser.repo.data.MediaItem
 import com.picker.chucklechooser.ui.util.CommonUtils
 
 class GalleryPagingAdapter(
     private val resources: Resources,
-    private val clickListener: (MediaItem) -> Unit
+    private val selectedDocumentList: MutableList<Document>,
+    private val clickListener: (Int, MediaItem) -> Unit         // Adapter position and Media Item
 ): PagingDataAdapter<MediaItem, GalleryPagingAdapter.GalleryViewHolder>(
     diff()
 ) {
@@ -27,26 +29,13 @@ class GalleryPagingAdapter(
 
     companion object {
 
-        const val KEY_IS_SELECTED = "isSelected"
-
         fun diff() = object : DiffUtil.ItemCallback<MediaItem>() {
             override fun areItemsTheSame(oldItem: MediaItem, newItem: MediaItem): Boolean {
                 return oldItem.id == newItem.id
             }
 
             override fun areContentsTheSame(oldItem: MediaItem, newItem: MediaItem): Boolean {
-                return oldItem.isSelected == newItem.isSelected
-            }
-
-            override fun getChangePayload(oldItem: MediaItem, newItem: MediaItem): Any? {
-
-                if (oldItem.isSelected != newItem.isSelected) {
-                    return Bundle().apply {
-                        putBoolean(KEY_IS_SELECTED, newItem.isSelected)
-                    }
-                }
-
-                return super.getChangePayload(oldItem, newItem)
+                return oldItem.mediaUri == newItem.mediaUri
             }
         }
     }
@@ -60,9 +49,9 @@ class GalleryPagingAdapter(
             super.onBindViewHolder(holder, position, payloads)
         } else {
             payloads.firstOrNull()?.let {
-                val bundle = it as? Bundle
-                if (bundle != null && bundle.containsKey(KEY_IS_SELECTED)) {
-                    holder.updateSelection(isSelected = bundle.getBoolean(KEY_IS_SELECTED, false))
+                val isSelected = it as? Boolean
+                if (isSelected != null) {
+                    holder.updateSelection(isSelected = isSelected)
                 }
             }
         }
@@ -88,7 +77,7 @@ class GalleryPagingAdapter(
             binding.ivSelection.setOnClickListener {
                 if (bindingAdapterPosition != RecyclerView.NO_POSITION) {
                     getItem(bindingAdapterPosition)?.let { item ->
-                        clickListener(item)
+                        clickListener(bindingAdapterPosition, item)
                     }
                 }
             }
@@ -96,10 +85,10 @@ class GalleryPagingAdapter(
                 .placeholder(R.drawable.baseline_image_24).apply(
                 RequestOptions.diskCacheStrategyOf(DiskCacheStrategy.RESOURCE).centerCrop()
             ).into(binding.iv)
-            updateSelection(isSelected = mediaItem.isSelected)
+            updateSelection(isSelected = selectedDocumentList.find { it.id == mediaItem.id && it.documentType == mediaItem.mediaType } != null)
         }
 
-        fun updateSelection(isSelected: Boolean) {
+        internal fun updateSelection(isSelected: Boolean) {
             binding.ivSelection.setImageResource(
                 if (isSelected) R.drawable.baseline_radio_button_checked_24 else R.drawable.baseline_radio_button_unchecked_24
             )
@@ -111,5 +100,10 @@ class GalleryPagingAdapter(
             }
             binding.iv.layoutParams = params
         }
+    }
+
+    fun onSelectedDocumentsUpdated(documents: List<Document>) {
+        selectedDocumentList.clear()
+        selectedDocumentList.addAll(documents)
     }
 }

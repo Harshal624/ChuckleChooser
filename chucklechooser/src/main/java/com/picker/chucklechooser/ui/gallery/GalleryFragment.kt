@@ -64,8 +64,9 @@ class GalleryFragment : Fragment() {
 
     private fun setUpAdapter() {
 
-        galleryAdapter = GalleryPagingAdapter(resources = resources) { selectedItem ->
-            activityViewModel.updateDocumentSelection(selectedItem)
+        galleryAdapter = GalleryPagingAdapter(resources = resources, selectedDocumentList = activityViewModel.selectedDocuments.value?.toMutableList() ?: mutableListOf()) { position, selectedItem ->
+            val isSelected = activityViewModel.updateDocumentSelection(selectedItem)
+            galleryAdapter.notifyItemChanged(position, isSelected)
         }
 
         binding.rv.apply {
@@ -85,6 +86,8 @@ class GalleryFragment : Fragment() {
         activityViewModel.selectedDocuments.observe(viewLifecycleOwner) { documents ->
             binding.tvSelection.isVisible = documents.isNotEmpty()
             binding.tvSelection.text = getString(R.string.x_selected, documents.size)
+
+            galleryAdapter.onSelectedDocumentsUpdated(documents)
         }
     }
     override fun onDestroyView() {

@@ -37,14 +37,7 @@ class ChucklePickerViewModel(
     val selectedDocuments = _selectedDocuments.asLiveData()
 
     val mediaPage = _selectedAlbumType.flatMapLatest { item ->
-        _selectedDocuments.flatMapLatest { documentList ->
-            mediaRepository.getMediaPage(albumItem = item)
-                .map { mediaItemList ->
-                    mediaItemList.map { item ->
-                        item.copy(isSelected = documentList.find { doc -> doc.uri == item.mediaUri } != null)
-                    }
-                }
-        }
+        mediaRepository.getMediaPage(albumItem = item)
     }.cachedIn(viewModelScope)
 
     init {
@@ -58,21 +51,24 @@ class ChucklePickerViewModel(
         _selectedAlbumType.value = albumItem
     }
 
-    fun updateDocumentSelection(selectedItem: MediaItem) {
+    // Returns true if the document is selected
+    fun updateDocumentSelection(selectedItem: MediaItem): Boolean {
         val selectedDocs = mutableListOf<Document>()
         selectedDocs.addAll(_selectedDocuments.value)
-        val existingDocument = selectedDocs.find { doc -> doc.uri == selectedItem.mediaUri }
+        val existingDocument = selectedDocs.find { doc -> doc.id == selectedItem.id && doc.documentType == selectedItem.mediaType }
         if (existingDocument == null) {
             selectedDocs.add(
                 Document(
+                    id = selectedItem.id,
                     uri = selectedItem.mediaUri,
-                    documentType = DocumentType.MEDIA
+                    documentType = selectedItem.mediaType
                 )
             )
         } else {
             selectedDocs.remove(existingDocument)
         }
         _selectedDocuments.value = selectedDocs
+        return existingDocument == null
     }
 
     class ChucklePickerViewModelFactory(
