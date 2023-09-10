@@ -5,9 +5,11 @@ import androidx.paging.PagingState
 import com.picker.chucklechooser.repo.GalleryRepository
 import com.picker.chucklechooser.repo.data.AlbumItem
 import com.picker.chucklechooser.repo.data.MediaItem
+import com.picker.chucklechooser.repo.util.PagingUtil
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
+import kotlin.math.abs
 
 class GalleryPagingDataSource(
     private val albumItem: AlbumItem,
@@ -17,17 +19,12 @@ class GalleryPagingDataSource(
     override val keyReuseSupported: Boolean
         get() = false
 
+    override val jumpingSupported: Boolean
+        get() = true
+
     override fun getRefreshKey(state: PagingState<Int, MediaItem>): Int? {
-        val anchorPosition = state.anchorPosition
-
-        if (anchorPosition != null) {
-            val closestPosition = state.closestPageToPosition(anchorPosition)?.prevKey?.plus(1)
-                ?: state.closestPageToPosition(anchorPosition)?.nextKey?.minus(1)
-            Timber.d("getRefreshKey called. Anchor pos: $anchorPosition, closest position to position: $closestPosition")
-            return closestPosition
-        }
-
-        return null
+        val anchorPosition = state.anchorPosition ?: return null
+        return abs(anchorPosition / PagingUtil.PAGE_SIZE_GALLERY)
     }
 
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, MediaItem> {
@@ -42,9 +39,11 @@ class GalleryPagingDataSource(
 
                 val currentPage = params.key ?: 0
 
+                val offset = currentPage * params.loadSize
+
                 val mediaItemList = repository.fetchAllMedia(
                     albumItem = albumItem,
-                    page = currentPage,
+                    offset = offset,
                     pageSize = params.loadSize
                 )
 
@@ -52,12 +51,18 @@ class GalleryPagingDataSource(
 
                 val nextPage = if (mediaItemList.isNotEmpty()) currentPage + 1 else null
 
-                Timber.d("Mode: $mode, previous page: $prevPage, current page: $currentPage, nextPage: $nextPage. List size: ${mediaItemList.size}")
+                val totalMediaCount = repository.getMediaCount(albumItem = albumItem)
+
+                val itemsAfterCurrentPage = totalMediaCount - (offset + mediaItemList.size)
+
+                Timber.d("Mode: $mode, previous page: $prevPage, current page: $currentPage, nextPage: $nextPage. List size: ${mediaItemList.size}, itemsAfter: $itemsAfterCurrentPage, itemsBefore: $offset, totalMediaCount: $totalMediaCount")
 
                 LoadResult.Page(
                     data = mediaItemList,
                     prevKey = prevPage,
-                    nextKey = nextPage
+                    nextKey = nextPage,
+                    itemsBefore = offset,
+                    itemsAfter = if (itemsAfterCurrentPage < 0) 0 else itemsAfterCurrentPage
                 )
             } catch (e: Exception) {
                 Timber.e("Exception: $e")

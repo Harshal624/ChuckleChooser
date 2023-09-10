@@ -16,8 +16,9 @@ class MediaRepository(
     fun getMediaPage(albumItem: AlbumItem): Flow<PagingData<MediaItem>> {
         return Pager(config = PagingConfig(
             pageSize = PagingUtil.PAGE_SIZE_GALLERY,
-            enablePlaceholders = false,
-            initialLoadSize = PagingUtil.INITIAL_PAGE_LOAD_SIZE
+            enablePlaceholders = true,
+            initialLoadSize = PagingUtil.PAGE_SIZE_GALLERY,
+            jumpThreshold = PagingUtil.PAGE_SIZE_GALLERY * 3
         ), pagingSourceFactory = {
             GalleryPagingDataSource(
                 albumItem = albumItem,

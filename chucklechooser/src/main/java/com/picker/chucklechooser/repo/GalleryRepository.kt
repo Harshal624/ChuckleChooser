@@ -28,6 +28,10 @@ class GalleryRepository(
         MediaStore.Files.FileColumns.DURATION
     )
 
+    private val mediaCountProjection = arrayOf(
+        MediaStore.Files.FileColumns._ID
+    )
+
     private val mediaExternalUri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
         MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL)
     } else {
@@ -124,9 +128,7 @@ class GalleryRepository(
         }
     }
 
-    fun fetchAllMedia(albumItem: AlbumItem, page: Int, pageSize: Int): List<MediaItem> {
-
-        val offset = page * pageSize
+    fun fetchAllMedia(albumItem: AlbumItem, offset: Int, pageSize: Int): List<MediaItem> {
 
         val selection =
             if (albumItem.albumType == AlbumType.ALL) "${MediaStore.Files.FileColumns.MEDIA_TYPE} = ? OR ${MediaStore.Files.FileColumns.MEDIA_TYPE} = ?" else "${MediaStore.Images.ImageColumns.BUCKET_ID} =? AND (${MediaStore.Files.FileColumns.MEDIA_TYPE} = ? OR ${MediaStore.Files.FileColumns.MEDIA_TYPE} = ?)"
@@ -246,5 +248,65 @@ class GalleryRepository(
         }
         Timber.d("fetchAllMedia ${list.size} media found")
         return list
+    }
+    fun getMediaCount(albumItem: AlbumItem): Int {
+
+        val selection =
+            if (albumItem.albumType == AlbumType.ALL) "${MediaStore.Files.FileColumns.MEDIA_TYPE} = ? OR ${MediaStore.Files.FileColumns.MEDIA_TYPE} = ?" else "${MediaStore.Images.ImageColumns.BUCKET_ID} =? AND (${MediaStore.Files.FileColumns.MEDIA_TYPE} = ? OR ${MediaStore.Files.FileColumns.MEDIA_TYPE} = ?)"
+
+        val selectionArgs = if (albumItem.albumType == AlbumType.ALL) {
+            arrayOf(
+                MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE.toString(),
+                MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO.toString()
+            )
+        } else {
+            arrayOf(
+                albumItem.bucketId,
+                MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE.toString(),
+                MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO.toString()
+            )
+        }
+
+        val query = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+
+            val bundle = Bundle()
+            bundle.apply {
+                putStringArray(
+                    ContentResolver.QUERY_ARG_SORT_COLUMNS,
+                    arrayOf(MediaStore.Files.FileColumns.DATE_MODIFIED)
+                )
+                putInt(
+                    ContentResolver.QUERY_ARG_SORT_DIRECTION,
+                    ContentResolver.QUERY_SORT_DIRECTION_DESCENDING
+                )
+                putString(ContentResolver.QUERY_ARG_SQL_SELECTION, selection)
+                putStringArray(
+                    ContentResolver.QUERY_ARG_SQL_SELECTION_ARGS,
+                    selectionArgs
+                )
+            }
+
+            contentResolver.query(
+                mediaExternalUri,
+                mediaCountProjection,
+                bundle,
+                null
+            )
+        } else {
+            contentResolver.query(
+                mediaExternalUri,
+                mediaCountProjection,
+                selection,
+                selectionArgs,
+                MediaStore.Files.FileColumns.DATE_TAKEN + " DESC"
+            )
+        }
+
+        return try {
+            query?.count ?: 0
+        } catch (e: Exception) {
+            Timber.e("getMediaCount exception: $e")
+            0
+        }
     }
 }

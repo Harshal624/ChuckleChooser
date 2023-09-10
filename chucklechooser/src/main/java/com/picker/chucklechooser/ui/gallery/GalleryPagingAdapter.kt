@@ -13,15 +13,17 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.RequestOptions
 import com.picker.chucklechooser.R
 import com.picker.chucklechooser.databinding.ItemGalleryBinding
+import com.picker.chucklechooser.databinding.ItemImagePlaceholderBinding
 import com.picker.chucklechooser.repo.data.Document
 import com.picker.chucklechooser.repo.data.MediaItem
 import com.picker.chucklechooser.ui.util.CommonUtils
+import timber.log.Timber
 
 class GalleryPagingAdapter(
     private val resources: Resources,
     private val selectedDocumentList: MutableList<Document>,
     private val clickListener: (Int, MediaItem) -> Unit         // Adapter position and Media Item
-): PagingDataAdapter<MediaItem, GalleryPagingAdapter.GalleryViewHolder>(
+) : PagingDataAdapter<MediaItem, RecyclerView.ViewHolder>(
     diff()
 ) {
 
@@ -41,34 +43,58 @@ class GalleryPagingAdapter(
     }
 
     override fun onBindViewHolder(
-        holder: GalleryViewHolder,
+        holder: RecyclerView.ViewHolder,
         position: Int,
         payloads: MutableList<Any>
     ) {
         if (payloads.isEmpty()) {
             super.onBindViewHolder(holder, position, payloads)
         } else {
-            payloads.firstOrNull()?.let {
-                val isSelected = it as? Boolean
-                if (isSelected != null) {
-                    holder.updateSelection(isSelected = isSelected)
+            if (holder is GalleryViewHolder) {
+                payloads.firstOrNull()?.let {
+                    val isSelected = it as? Boolean
+                    if (isSelected != null) {
+                        holder.updateSelection(isSelected = isSelected)
+                    }
                 }
             }
         }
     }
 
-    override fun onBindViewHolder(holder: GalleryViewHolder, position: Int) {
-        getItem(position)?.let { item ->
-            holder.bind(mediaItem = item)
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        if (holder is GalleryViewHolder) {
+            getItem(position)?.let { item ->
+                holder.bind(mediaItem = item)
+            }
         }
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): GalleryViewHolder {
-        val binding = ItemGalleryBinding.inflate(
-            LayoutInflater.from(parent.context), parent, false
-        )
-        return GalleryViewHolder(binding = binding)
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        return if (viewType == -1) {
+            val binding = ItemImagePlaceholderBinding.inflate(
+                LayoutInflater.from(parent.context), parent, false
+            )
+            ImagePlaceholderViewHolder(binding = binding)
+        } else {
+            val binding = ItemGalleryBinding.inflate(
+                LayoutInflater.from(parent.context), parent, false
+            )
+            GalleryViewHolder(binding = binding)
+        }
+
     }
+
+    override fun getItemViewType(position: Int): Int {
+        return if (getItem(position) == null) {
+            -1  // Placeholder
+        } else {
+            1   // Actual item
+        }
+    }
+
+    inner class ImagePlaceholderViewHolder(
+        binding: ItemImagePlaceholderBinding
+    ) : RecyclerView.ViewHolder(binding.root)
 
     inner class GalleryViewHolder(
         private val binding: ItemGalleryBinding
@@ -83,8 +109,8 @@ class GalleryPagingAdapter(
             }
             Glide.with(binding.iv).load(mediaItem.mediaUri)
                 .placeholder(R.drawable.baseline_image_24).apply(
-                RequestOptions.diskCacheStrategyOf(DiskCacheStrategy.RESOURCE).centerCrop()
-            ).into(binding.iv)
+                    RequestOptions.diskCacheStrategyOf(DiskCacheStrategy.RESOURCE).centerCrop()
+                ).into(binding.iv)
             updateSelection(isSelected = selectedDocumentList.find { it.id == mediaItem.id && it.documentType == mediaItem.mediaType } != null)
         }
 
@@ -95,9 +121,14 @@ class GalleryPagingAdapter(
             binding.vSelection.isVisible = isSelected
             val params: LayoutParams = binding.iv.layoutParams as LayoutParams
             if (isSelected) {
-                params.setMargins(selectedImgDpInPx,selectedImgDpInPx,selectedImgDpInPx,selectedImgDpInPx)
+                params.setMargins(
+                    selectedImgDpInPx,
+                    selectedImgDpInPx,
+                    selectedImgDpInPx,
+                    selectedImgDpInPx
+                )
             } else {
-                params.setMargins(0,0,0,0)
+                params.setMargins(0, 0, 0, 0)
             }
             binding.iv.layoutParams = params
         }
