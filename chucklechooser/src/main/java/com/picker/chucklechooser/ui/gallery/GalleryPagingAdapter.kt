@@ -54,6 +54,7 @@ class GalleryPagingAdapter(
                 payloads.firstOrNull()?.let {
                     val isSelected = it as? Boolean
                     if (isSelected != null) {
+                        Timber.d("onBindViewHolder payload. Is selected: $isSelected")
                         holder.updateSelection(isSelected = isSelected)
                     }
                 }
@@ -100,7 +101,8 @@ class GalleryPagingAdapter(
         private val binding: ItemGalleryBinding
     ) : RecyclerView.ViewHolder(binding.root) {
         fun bind(mediaItem: MediaItem) {
-            binding.ivSelection.setOnClickListener {
+            Timber.d("bind called for position: $bindingAdapterPosition")
+            binding.root.setOnClickListener {
                 if (bindingAdapterPosition != RecyclerView.NO_POSITION) {
                     getItem(bindingAdapterPosition)?.let { item ->
                         clickListener(bindingAdapterPosition, item)
